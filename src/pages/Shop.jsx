@@ -24,11 +24,9 @@ const Shop = () => {
   }, []);
 
   const categories = categoryData;
-  const sizes = ["XS", "S", "M", "L", "XL"];
 
   const [selectedFilters, setSelectedFilters] = useState({
     category: "",
-    size: "",
     price: 0,
   });
 
@@ -58,7 +56,6 @@ const Shop = () => {
       <div className="flex gap-10">
         <ShopFilter
           categories={categories}
-          sizes={sizes}
           handleFilterChange={handleFilterChange}
         />
         <div className="flex items-center flex-wrap">

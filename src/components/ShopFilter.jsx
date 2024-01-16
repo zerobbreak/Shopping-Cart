@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 
-const ShopFilter = ({ categories, sizes, handleFilterChange }) => {
+const ShopFilter = ({ categories, handleFilterChange }) => {
   return (
     <div className="bg-gray-200 p-4">
       <h2 className="text-xl font-bold mb-2">Filter Options</h2>
@@ -23,29 +23,6 @@ const ShopFilter = ({ categories, sizes, handleFilterChange }) => {
           {categories.map((category) => (
             <option key={category} value={category}>
               {category}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Size Filter */}
-      <div className="mb-4">
-        <label
-          htmlFor="size"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Size
-        </label>
-        <select
-          id="size"
-          name="size"
-          className="mt-1 p-2 border rounded-md w-full"
-          onChange={handleFilterChange}
-        >
-          <option value="">All Sizes</option>
-          {sizes.map((size) => (
-            <option key={size} value={size}>
-              {size}
             </option>
           ))}
         </select>
