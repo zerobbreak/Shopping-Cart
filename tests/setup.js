@@ -6,3 +6,14 @@ import "@testing-library/jest-dom/vitest";
 afterEach(() => {
     cleanup();
 })
+
+// Mock IntersectionObserver
+const IntersectionObserverMock = function () {
+    return {
+        observe: vi.fn(),
+        disconnect: vi.fn(),
+        unobserve: vi.fn(),
+    };
+};
+
+vi.stubGlobal('IntersectionObserver', IntersectionObserverMock);

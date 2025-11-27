@@ -6,6 +6,16 @@ export default {
   ],
   theme: {
     extend: {
+      colors: {
+        primary: "#0f172a", // Slate 900
+        secondary: "#64748b", // Slate 500
+        accent: "#3b82f6", // Blue 500
+        background: "#f8fafc", // Slate 50
+        surface: "#ffffff",
+      },
+      fontFamily: {
+        sans: ["Inter", "sans-serif"],
+      },
       backgroundImage: {
         'hero-img': "url('/assets/background-image.jpg')",
       },

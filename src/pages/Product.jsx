@@ -1,32 +1,47 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getProduct } from "../api/api";
-import { Oval } from "react-loader-spinner";
+import { getProduct, getProducts } from "../api/api";
 import Navbar from "../components/Navbar";
+import ProductCard from "../components/ProductCard";
+import { useCart } from "../context/CartContext";
+import toast from "react-hot-toast";
+import { motion } from "framer-motion";
 
 const Product = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { addToCart } = useCart();
+
   const sizes = ["S", "M", "L", "XL"];
   const colors = ["White", "Blue", "Black"];
   const [activeSize, setActiveSize] = useState(null);
   const [activeColor, setActiveColor] = useState(null);
-  const [addedToCart, setAddedToCart] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const productData = await getProduct({ id });
         setProduct(productData);
+
+        // Fetch related products
+        const allProducts = await getProducts();
+        const related = allProducts
+          .filter(item => item.category === productData.category && item.id !== productData.id)
+          .slice(0, 3);
+        setRelatedProducts(related);
       } catch (error) {
         console.log("Error fetching product details: ", error);
+        toast.error("Failed to load product details");
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
+    window.scrollTo(0, 0);
   }, [id]);
 
   const handleSizeClick = (size) => {
@@ -38,98 +53,141 @@ const Product = () => {
   };
 
   const handleAddToCart = () => {
-    const cartItem = {
-      id: product.id,
-      title: product.title,
-      price: product.price,
-      image: product.image,
-      quantity: 1,
-    };
+    if (!product) return;
 
-    let existingCart = JSON.parse(localStorage.getItem("cart")) || [];
-    existingCart = [...existingCart, cartItem];
-    localStorage.setItem("cart", JSON.stringify(existingCart));
-    setAddedToCart(true);
+    // Optional: Validate size/color selection for specific categories
+    const isClothing = product.category === "men's clothing" || product.category === "women's clothing";
+    if (isClothing && !activeSize) {
+      toast.error("Please select a size");
+      return;
+    }
+
+    addToCart({
+      ...product,
+      selectedSize: activeSize,
+      selectedColor: activeColor
+    });
+
+    toast.success("Added to cart!");
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Oval color="#4CAF50" height={50} width={50} />
+      <div className="w-full min-h-screen bg-background">
+        <Navbar />
+        <div className="flex justify-center items-center h-[calc(100vh-80px)]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+        </div>
       </div>
     );
   }
 
-  // Check if the product category is "electronics"
+  if (!product) return null;
+
   const isTechProduct = product.category.toLowerCase() === "electronics";
   const isJewelery = product.category.toLowerCase() === "jewelery";
 
-  // Render product details once fetched
   return (
-    <div>
-      <Navbar/>
-      <div className="flex items-center justify-center p-10">
-        <div className="flex items-center justify-between w-full max-w-screen mx-auto">
-          <div className="w-2/3 pr-5">
-            <h2 className="font-bold text-2xl">{product.title}</h2>
-            <p className="font-light text-base">{product.category}</p>
-            <p className="font-medium text-xl">${product.price}</p>
-            <p className="font-normal">{product.description}</p>
-            <p
-              className={`mt-5 ${isTechProduct ? "mb-10" : ""} ${
-                isJewelery ? "mb-10" : ""
-              }`}
-            >
-              Rating: {product.rating.rate} ({product.rating.count} reviews)
-            </p>
-            {!isTechProduct && !isJewelery && (
-              <div className="flex mt-5">
-                {/* Size buttons */}
-                {sizes.map((size) => (
-                  <button
-                    key={size}
-                    className={`mr-3 ${
-                      activeSize === size
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-200"
-                    } p-2`}
-                    onClick={() => handleSizeClick(size)}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-            )}
-            {!isTechProduct && !isJewelery && (
-              <div className="flex mt-3">
-                {/* Color color boxes */}
-                {colors.map((color) => (
-                  <div
-                    key={color}
-                    className={`mr-3 w-8 h-8 cursor-pointer mb-10 ${
-                      activeColor === color
-                        ? `bg-${color.toLowerCase()}-500`
-                        : "bg-gray-200"
-                    } rounded-full`}
-                    onClick={() => handleColorClick(color)}
-                  />
-                ))}
-              </div>
-            )}
-            <button
-            onClick={handleAddToCart}
-              className={`bg-black text-white p-2 rounded text-center px-5 ${
-                addedToCart ? "bg-gray-500 cursor-not-allowed" : "" // Disable the button if added to the cart
-              }`}
-              disabled={addedToCart} // Disable the button if added to the cart
-            >
-              {addedToCart ? "Added" : "Add to Cart"}
-            </button>
+    <div className="w-full min-h-screen bg-background">
+      <Navbar />
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <div className="flex flex-col md:flex-row gap-12 mb-20">
+          {/* Image Section */}
+          <div className="w-full md:w-1/2 bg-white p-8 rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 aspect-square md:aspect-auto md:h-[600px] relative overflow-hidden">
+            <motion.img
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="w-full h-full object-contain"
+              src={product.image}
+              alt={product.title}
+            />
           </div>
-          <div className="w-1/3 p-5">
-            <img className="w-56 ml-10" src={product.image} alt={product.title} />
+
+          {/* Details Section */}
+          <div className="w-full md:w-1/2 space-y-6">
+            <div>
+              <span className="text-accent font-semibold text-sm uppercase tracking-wider">
+                {product.category}
+              </span>
+              <h1 className="text-3xl md:text-4xl font-bold text-primary mt-2 mb-4 leading-tight">
+                {product.title}
+              </h1>
+              <div className="flex items-center gap-4">
+                <span className="text-2xl font-bold text-primary">${product.price}</span>
+                <div className="flex items-center gap-1 text-yellow-400">
+                  <span>★</span>
+                  <span className="text-secondary text-sm font-medium">
+                    {product.rating.rate} ({product.rating.count} reviews)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-secondary leading-relaxed">
+              {product.description}
+            </p>
+
+            {!isTechProduct && !isJewelery && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-bold text-primary mb-3">Select Size</h3>
+                  <div className="flex gap-3">
+                    {sizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => handleSizeClick(size)}
+                        className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all ${activeSize === size
+                          ? "bg-primary text-white shadow-lg shadow-primary/20"
+                          : "bg-white border border-slate-200 text-secondary hover:border-primary"
+                          }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-bold text-primary mb-3">Select Color</h3>
+                  <div className="flex gap-3">
+                    {colors.map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => handleColorClick(color)}
+                        className={`w-8 h-8 rounded-full border-2 transition-all ${activeColor === color ? "border-primary scale-110" : "border-transparent hover:scale-110"
+                          }`}
+                        style={{ backgroundColor: color.toLowerCase() }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="pt-6">
+              <button
+                onClick={handleAddToCart}
+                className="w-full md:w-auto px-8 py-4 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 active:scale-95"
+              >
+                Add to Cart
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Related Products */}
+        {relatedProducts.length > 0 && (
+          <div className="border-t border-slate-200 pt-16">
+            <h2 className="text-2xl font-bold text-primary mb-8">Related Products</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {relatedProducts.map((item) => (
+                <ProductCard key={item.id} product={item} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
